@@ -5,6 +5,14 @@ import Drift
 
 ItemDelegate {
     id: root
+
+    // === 第一次修改：添加这四行 ===
+    property string articleId: model.articleId || ""
+    property string articleTitle: model.title || ""
+    property string articleLink: model.link || ""
+    property bool articleStarred: model.isStarred || false
+    // ==================
+
     width: ListView.view ? ListView.view.width : 300
     height: 80
 

@@ -69,11 +69,27 @@ Item {
                     Layout.fillWidth: true
                 }
 
-                ArticleListView {
-                    id: articleList
-                    controller: root.controller
+                SplitView {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    orientation: Qt.Vertical
+
+                    ArticleListView {
+                        id: articleList
+                        controller: root.controller
+                        SplitView.minimumHeight: 150
+                        SplitView.preferredHeight: 350
+                    }
+
+                    ReaderView {
+                        id: readerView
+                        controller: root.controller
+                        SplitView.minimumHeight: 200
+                        articleId: articleList.currentItem ? articleList.currentItem.articleId : ""
+                        articleTitle: articleList.currentItem ? articleList.currentItem.articleTitle : ""
+                        articleLink: articleList.currentItem ? articleList.currentItem.articleLink : ""
+                        articleStarred: articleList.currentItem ? articleList.currentItem.articleStarred : false
+                    }
                 }
             }
         }
