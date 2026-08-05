@@ -2,10 +2,6 @@
 
 A clean, cross-platform desktop RSS/Atom feed reader built with **Qt 6** and **C++20**.
 
-<p align="center">
-  <img src="screenshots/drift.png" alt="Drift screenshot" width="800">
-</p>
-
 ## Features
 
 - **RSS & Atom** — Parses RSS 2.0 and Atom 1.0 feeds with full content extraction
