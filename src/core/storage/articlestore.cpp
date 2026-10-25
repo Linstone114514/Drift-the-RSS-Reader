@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QUuid>
 #include <QSet>
+#include <QCoreApplication>
 
 namespace drift {
 
@@ -15,6 +16,13 @@ ArticleStore::ArticleStore(QObject *parent)
     m_starSaveTimer.setSingleShot(true);
     m_starSaveTimer.setInterval(500);
     connect(&m_starSaveTimer, &QTimer::timeout, this, &ArticleStore::saveStars);
+    // The debounce timer never fires once the event loop stops; flush at quit.
+    connect(qApp, &QCoreApplication::aboutToQuit, this, [this] {
+        if (m_starSaveTimer.isActive()) {
+            m_starSaveTimer.stop();
+            saveStars();
+        }
+    });
 }
 
 void ArticleStore::load()
@@ -132,27 +140,44 @@ QList<QString> ArticleStore::upsertFeedArticles(const QString &feedId,
     return newIds;
 }
 
+void ArticleStore::clearContentCached(const QString &articleId)
+{
+    for (auto it = m_articles.begin(); it != m_articles.end(); ++it) {
+        for (auto &a : it.value()) {
+            if (a.id == articleId) {
+                a.contentCached = false;
+                a.contentHash.clear();
+                saveFeedShard(it.key());
+                return;
+            }
+        }
+    }
+}
+
 void ArticleStore::setRead(const QStringList &articleIds, bool read)
 {
+    QSet<QString> dirtyFeeds;
     for (const auto &id : articleIds) {
         for (auto it = m_articles.begin(); it != m_articles.end(); ++it) {
             for (auto &a : it.value()) {
                 if (a.id == id) {
                     a.isRead = read;
+                    dirtyFeeds.insert(it.key());
                     break;
                 }
             }
         }
     }
-    // Persist affected shards... simplified: save all loaded feeds
-    for (auto it = m_articles.cbegin(); it != m_articles.cend(); ++it)
-        saveFeedShard(it.key());
+    // Persist only the shards that actually changed
+    for (const auto &feedId : std::as_const(dirtyFeeds))
+        saveFeedShard(feedId);
 
     emit articleFlagsChanged(articleIds);
 }
 
 void ArticleStore::setStarred(const QStringList &articleIds, bool starred)
 {
+    QSet<QString> dirtyFeeds;
     for (const auto &id : articleIds) {
         for (auto it = m_articles.begin(); it != m_articles.end(); ++it) {
             for (auto &a : it.value()) {
@@ -163,14 +188,15 @@ void ArticleStore::setStarred(const QStringList &articleIds, bool starred)
                         m_stars[it.key()].insert(id);
                     else
                         m_stars[it.key()].remove(id);
+                    dirtyFeeds.insert(it.key());
                     break;
                 }
             }
         }
     }
     m_starSaveTimer.start();
-    for (auto it = m_articles.cbegin(); it != m_articles.cend(); ++it)
-        saveFeedShard(it.key());
+    for (const auto &feedId : std::as_const(dirtyFeeds))
+        saveFeedShard(feedId);
 
     emit articleFlagsChanged(articleIds);
 }

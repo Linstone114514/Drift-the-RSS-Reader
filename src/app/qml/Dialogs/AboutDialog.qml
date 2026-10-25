@@ -3,16 +3,14 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Drift
 
-Dialog {
+WinDialog {
     id: root
-    title: qsTr("About Drift")
-    standardButtons: Dialog.Ok
-    modal: true
-    width: 350
+    dialogTitle: qsTr("About Drift")
+    width: 380
 
     ColumnLayout {
-        anchors.fill: parent
-        spacing: 12
+        spacing: 10
+        Layout.fillWidth: true
 
         Label {
             text: "Drift"
@@ -52,4 +50,12 @@ Dialog {
             horizontalAlignment: Text.AlignHCenter
         }
     }
+
+    buttons: [
+        WinDialogButton {
+            text: qsTr("OK")
+            primary: true
+            onClicked: root.close()
+        }
+    ]
 }

@@ -1,0 +1,80 @@
+name: Release
+
+# Trigger: pushing a tag like v0.1.0 (publishes a GitHub Release), or manual
+# run from the Actions tab (uploads an installable artifact only).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-installer:
+    name: Windows installer (NSIS)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      QT_VERSION: '6.11.1'   # keep in sync with local dev environment
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: 'windows'
+          target: 'desktop'
+          arch: 'mingw_64'
+          tools: 'tools_mingw1310'
+          cache: true
+        # To ship the in-app browser, also add: modules: 'qtwebview'
+        # (and keep it installed locally so behaviour matches).
+
+      - name: Locate MinGW toolchain
+        run: |
+          MINGW_BIN="$(ls -d "$QT_ROOT_DIR/Tools/"*mingw*/bin | head -1)"
+          echo "MINGW_BIN=$MINGW_BIN" >> "$GITHUB_ENV"
+          echo "$MINGW_BIN" >> "$GITHUB_PATH"
+
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+
+      - name: Configure
+        run: >
+          cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER="$MINGW_BIN/gcc.exe"
+          -DCMAKE_CXX_COMPILER="$MINGW_BIN/g++.exe"
+
+      - name: Build
+        run: cmake --build build-release --parallel
+
+      - name: Test
+        run: |
+          cmake -S . -B build-tests -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER="$MINGW_BIN/gcc.exe" \
+            -DCMAKE_CXX_COMPILER="$MINGW_BIN/g++.exe" \
+            -DBUILD_TESTING=ON
+          ctest --test-dir build-tests --output-on-failure
+
+      - name: Package installer
+        run: |
+          cd build-release
+          cpack -G NSIS
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Drift-windows-installer
+          path: build-release/Drift-*-win64-setup.exe
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build-release/Drift-*-win64-setup.exe
+          generate_release_notes: true

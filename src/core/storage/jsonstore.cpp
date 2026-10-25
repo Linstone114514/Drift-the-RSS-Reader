@@ -15,7 +15,8 @@ bool JsonStore::saveJson(const QJsonObject &obj, const QString &path)
     if (!file.open(QIODevice::WriteOnly))
         return false;
 
-    file.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
+    // Compact: no whitespace padding — smaller files, faster parse/write.
+    file.write(QJsonDocument(obj).toJson(QJsonDocument::Compact));
     return file.commit();
 }
 
@@ -27,7 +28,7 @@ bool JsonStore::saveJsonArray(const QJsonArray &arr, const QString &path)
     if (!file.open(QIODevice::WriteOnly))
         return false;
 
-    file.write(QJsonDocument(arr).toJson(QJsonDocument::Indented));
+    file.write(QJsonDocument(arr).toJson(QJsonDocument::Compact));
     return file.commit();
 }
 

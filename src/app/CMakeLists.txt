@@ -31,6 +31,9 @@ qt_add_qml_module(drift
         qml/components/UnreadBadge.qml
         qml/components/StarButton.qml
         qml/components/EmptyState.qml
+        qml/components/WinDialog.qml
+        qml/components/WinDialogButton.qml
+        qml/components/WinDialogTextField.qml
 )
 
 # Optional WebView support
@@ -48,6 +51,18 @@ target_link_libraries(drift
         Qt6::QuickControls2
         Qt6::QuickLayouts
 )
+
+# Window icon (read at runtime; windeployqt deploys the qico plugin for it)
+qt_add_resources(drift "appicon"
+    PREFIX "/icons"
+    FILES drift.ico
+)
+
+# Windows exe resources: icon + VERSIONINFO (needs windres, part of MinGW/MSVC)
+if(WIN32 AND NOT ANDROID)
+    configure_file(drift.rc.in drift.rc @ONLY)
+    target_sources(drift PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/drift.rc)
+endif()
 
 # Platform-specific executable properties
 # Note: WIN32_EXECUTABLE is FALSE on MinGW to avoid Qt6EntryPoint / __imp___argc

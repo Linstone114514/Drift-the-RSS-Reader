@@ -10,6 +10,8 @@ ItemDelegate {
 
     property bool isFeedNode: model.nodeType === 2
 
+    hoverEnabled: true
+
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: isFeedNode ? 24 : 8
@@ -48,6 +50,26 @@ ItemDelegate {
         UnreadBadge {
             count: model.unreadCount || 0
             visible: count > 0 && isFeedNode
+        }
+
+        // Settings gear icon — appears when hovering a feed row
+        Label {
+            text: "⚙"
+            font.pixelSize: 12
+            visible: isFeedNode && root.hovered
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: function(mouse) {
+                    mouse.accepted = true
+                    var view = root.ListView.view
+                    if (view && view.feedSettingsDialog) {
+                        view.feedSettingsDialog.feedId = model.feedId
+                        view.feedSettingsDialog.feedTitle = model.title
+                        view.feedSettingsDialog.open()
+                    }
+                }
+            }
         }
     }
 

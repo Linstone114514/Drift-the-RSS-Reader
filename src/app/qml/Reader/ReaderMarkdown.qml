@@ -36,7 +36,7 @@ Flickable {
         font.pixelSize: root.fontSize
         color: Material.foreground
         wrapMode: Text.WordWrap
-        selectable: true
+        //selectable: true
         lineHeight: 1.6
 
         onLinkActivated: function(link) {

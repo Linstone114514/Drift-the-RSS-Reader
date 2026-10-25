@@ -31,6 +31,8 @@ int main(int argc, char *argv[])
     app.setOrganizationName(QStringLiteral("Drift"));
     app.setApplicationName(QStringLiteral("Drift"));
     app.setApplicationVersion(QStringLiteral("0.1.0"));
+    // Complements the exe resource icon (taskbar/title bar icon)
+    app.setWindowIcon(QIcon(QStringLiteral(":/icons/drift.ico")));
 
     // Setup log file in the app data directory
     const QString logDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);

@@ -51,6 +51,12 @@ Drift/
 └── tests/                       # 单元测试（feed 解析、OPML、存储、HTML）
 ```
 
+## 下载安装
+
+前往 [Releases](https://github.com/Linstone114514/Drift-the-RSS-Reader/releases) 页面，下载最新版的 `Drift-x.y.z-win64-setup.exe`（Windows 64 位安装包），双击运行即可安装。
+
+应用名为 **Drift**，安装后可从开始菜单启动。安装包自带全部 Qt 运行库，无需另外安装 Qt。
+
 ## 构建
 
 ### 前置要求

@@ -3,12 +3,28 @@
 #include "platform/PlatformInfo.h"
 #include <QJsonArray>
 #include <QUuid>
+#include <QCoreApplication>
 
 namespace drift {
 
 SubscriptionStore::SubscriptionStore(QObject *parent)
     : QObject(parent)
 {
+    // Debounce disk writes: a refresh calls updateFeed() once per feed and
+    // each save rewrites the whole file.
+    m_saveTimer.setSingleShot(true);
+    m_saveTimer.setInterval(500);
+    connect(&m_saveTimer, &QTimer::timeout, this, &SubscriptionStore::save);
+    // The debounce timer never fires once the event loop stops; flush at quit.
+    connect(qApp, &QCoreApplication::aboutToQuit, this, &SubscriptionStore::flush);
+}
+
+void SubscriptionStore::flush()
+{
+    if (m_saveTimer.isActive()) {
+        m_saveTimer.stop();
+        save();
+    }
 }
 
 void SubscriptionStore::load()
@@ -56,12 +72,17 @@ QString SubscriptionStore::filePath() const
     return PlatformInfo::dataRoot() + QStringLiteral("/subscriptions.json");
 }
 
+void SubscriptionStore::scheduleSave()
+{
+    m_saveTimer.start();
+}
+
 // ── Categories ─────────────────────────────────────────────────────────
 
 void SubscriptionStore::addCategory(const Category &cat)
 {
     m_categories.insert(cat.id, cat);
-    save();
+    scheduleSave();
     emit categoriesChanged();
 }
 
@@ -73,14 +94,14 @@ void SubscriptionStore::removeCategory(const QString &categoryId)
         if (f.categoryId == categoryId)
             f.categoryId.clear();
     }
-    save();
+    scheduleSave();
     emit categoriesChanged();
 }
 
 void SubscriptionStore::updateCategory(const Category &cat)
 {
     m_categories.insert(cat.id, cat);
-    save();
+    scheduleSave();
     emit categoriesChanged();
 }
 
@@ -89,7 +110,7 @@ void SubscriptionStore::updateCategory(const Category &cat)
 void SubscriptionStore::addFeed(const Feed &feed)
 {
     m_feeds.append(feed);
-    save();
+    scheduleSave();
     emit feedAdded(feed);
 }
 
@@ -101,7 +122,7 @@ void SubscriptionStore::updateFeed(const Feed &feed)
             break;
         }
     }
-    save();
+    scheduleSave();
     emit feedUpdated(feed);
 }
 
@@ -109,7 +130,7 @@ void SubscriptionStore::removeFeed(const QString &feedId)
 {
     m_feeds.erase(std::remove_if(m_feeds.begin(), m_feeds.end(),
         [&](const Feed &f) { return f.id == feedId; }), m_feeds.end());
-    save();
+    scheduleSave();
     emit feedRemoved(feedId);
 }
 

@@ -38,6 +38,7 @@ Item {
                     FeedTreeView {
                         id: feedTree
                         controller: root.controller
+                        feedSettingsDialog: feedSettingsDialog
                         Layout.fillWidth: true
                         Layout.fillHeight: true
 
@@ -56,40 +57,56 @@ Item {
                 color: Material.dividerColor
             }
 
-            // ── Right panel (article list + reader) ──────────────
-            ColumnLayout {
-                id: rightPanel
+            // ── Middle + right panels (article list | reader) ────
+            SplitView {
+                id: contentSplit
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 0
+                orientation: Qt.Horizontal
 
-                ListHeader {
-                    id: listHeader
-                    controller: root.controller
-                    Layout.fillWidth: true
+                // Thin divider-style handle, matching the sidebar divider
+                handle: Rectangle {
+                    implicitWidth: 5
+                    color: "transparent"
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 1
+                        height: parent.height
+                        color: Material.dividerColor
+                    }
                 }
 
-                SplitView {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    orientation: Qt.Vertical
+                // ── Middle panel (articles of selected feed) ──────
+                ColumnLayout {
+                    SplitView.minimumWidth: 240
+                    SplitView.preferredWidth: 380
+                    spacing: 0
+
+                    ListHeader {
+                        id: listHeader
+                        controller: root.controller
+                        Layout.fillWidth: true
+                    }
 
                     ArticleListView {
                         id: articleList
                         controller: root.controller
-                        SplitView.minimumHeight: 150
-                        SplitView.preferredHeight: 350
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
                     }
+                }
 
-                    ReaderView {
-                        id: readerView
-                        controller: root.controller
-                        SplitView.minimumHeight: 200
-                        articleId: articleList.currentItem ? articleList.currentItem.articleId : ""
-                        articleTitle: articleList.currentItem ? articleList.currentItem.articleTitle : ""
-                        articleLink: articleList.currentItem ? articleList.currentItem.articleLink : ""
-                        articleStarred: articleList.currentItem ? articleList.currentItem.articleStarred : false
-                    }
+                // ── Right panel (selected article) ────────────────
+                ReaderView {
+                    id: readerView
+                    controller: root.controller
+                    SplitView.minimumWidth: 300
+                    SplitView.fillWidth: true
+                    articleId: articleList.currentItem ? articleList.currentItem.articleId : ""
+                    articleTitle: articleList.currentItem ? articleList.currentItem.articleTitle : ""
+                    articleLink: articleList.currentItem ? articleList.currentItem.articleLink : ""
+                    articleStarred: articleList.currentItem ? articleList.currentItem.articleStarred : false
                 }
             }
         }
@@ -98,6 +115,11 @@ Item {
     // ── Dialogs ─────────────────────────────────────────────────────
     AddFeedDialog {
         id: addFeedDialog
+        controller: root.controller
+    }
+
+    FeedSettingsDialog {
+        id: feedSettingsDialog
         controller: root.controller
     }
 

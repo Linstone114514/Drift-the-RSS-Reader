@@ -52,8 +52,11 @@ signals:
 
 public slots:
     // Feed management
-    void addFeed(const QString &url);
+    void addFeed(const QString &url, const QString &title = {});
     void removeFeed(const QString &feedId);
+    void updateFeed(const QString &feedId, const QString &title,
+                    const QString &url, bool paused);
+    QVariantMap feedInfo(const QString &feedId);
     void refreshAll();
     void refreshFeed(const QString &feedId);
 

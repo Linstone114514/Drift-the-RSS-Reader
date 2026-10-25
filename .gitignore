@@ -52,3 +52,5 @@ DriftData/
 # Android
 *.apk
 *.aab
+
+.claude/

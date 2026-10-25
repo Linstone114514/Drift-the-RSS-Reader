@@ -18,9 +18,12 @@ FeedTreeModel::FeedTreeModel(SubscriptionStore *subStore, ArticleStore *artStore
     connect(m_subStore, &SubscriptionStore::feedAdded, this, &FeedTreeModel::onFeedAdded);
     connect(m_subStore, &SubscriptionStore::feedUpdated, this, &FeedTreeModel::onFeedUpdated);
     connect(m_subStore, &SubscriptionStore::feedRemoved, this, &FeedTreeModel::onFeedRemoved);
+    connect(m_subStore, &SubscriptionStore::storeLoaded, this, [this]() { rebuild(); });
     connect(m_artStore, &ArticleStore::articlesAdded, this, &FeedTreeModel::onArticlesAdded);
     connect(m_artStore, &ArticleStore::articleFlagsChanged, this, &FeedTreeModel::onArticlesChanged);
 
+    // Initial build — if stores are already loaded this populates the model.
+    // Otherwise, storeLoaded will trigger a rebuild when data arrives.
     rebuild();
 }
 

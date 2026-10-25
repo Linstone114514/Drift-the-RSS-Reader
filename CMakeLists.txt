@@ -52,3 +52,46 @@ if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+# ── Windows packaging: NSIS installer via CPack ──────────────────────────
+# "cmake --install" (and "cpack -G NSIS") deploys Qt runtime DLLs next to
+# drift.exe with windeployqt, then NSIS turns the staging tree into
+# Drift-<version>-win64-setup.exe.
+if(WIN32 AND NOT ANDROID)
+    install(TARGETS drift RUNTIME DESTINATION .)
+
+    find_program(WINDEPLOYQT_EXECUTABLE
+        NAMES windeployqt
+        PATHS "$ENV{QT_ROOT_DIR}/bin" "$ENV{CMAKE_PREFIX_PATH}/bin"
+        REQUIRED
+    )
+    install(CODE "
+        message(STATUS \"Deploying Qt runtime with windeployqt...\")
+        execute_process(
+            COMMAND \"${WINDEPLOYQT_EXECUTABLE}\" --release
+                    --qmldir \"${CMAKE_CURRENT_SOURCE_DIR}/src/app/qml\"
+                    \"\${CMAKE_INSTALL_PREFIX}/drift.exe\"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+    ")
+
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_PACKAGE_NAME "Drift")
+    set(CPACK_PACKAGE_VENDOR "Drift")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A clean, cross-platform desktop RSS/Atom reader")
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "Drift")
+    set(CPACK_PACKAGE_FILE_NAME "Drift-${PROJECT_VERSION}-win64-setup")
+
+    set(CPACK_NSIS_PACKAGE_NAME "Drift")
+    set(CPACK_NSIS_DISPLAY_NAME "Drift")
+    set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/src/app/drift.ico")
+    set(CPACK_NSIS_MUI_UNICON "${CMAKE_CURRENT_SOURCE_DIR}/src/app/drift.ico")
+    set(CPACK_NSIS_INSTALLED_ICON_NAME "drift.exe")
+    set(CPACK_PACKAGE_EXECUTABLES "drift;Drift")
+    set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+    set(CPACK_NSIS_MODIFY_PATH OFF)
+    set(CPACK_NSIS_URL_INFO_ABOUT "https://github.com/Linstone114514/Drift-the-RSS-Reader")
+
+    include(CPack)
+endif()

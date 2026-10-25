@@ -24,6 +24,7 @@ public:
     /// Single-article operations
     void setRead(const QStringList &articleIds, bool read);
     void setStarred(const QStringList &articleIds, bool starred);
+    void clearContentCached(const QString &articleId);
     void markFeedRead(const QString &feedId);
     void markAllRead();
 

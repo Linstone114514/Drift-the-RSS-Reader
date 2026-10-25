@@ -6,6 +6,7 @@ import Drift
 ListView {
     id: root
     required property var controller
+    property var feedSettingsDialog: null
 
     // Signals for actions that the parent (MainWindow) handles
     signal addFeedRequested()
@@ -50,6 +51,16 @@ ListView {
         property string feedTitle
 
         MenuItem {
+            text: qsTr("Settings...")
+            onTriggered: {
+                if (root.feedSettingsDialog) {
+                    root.feedSettingsDialog.feedId = feedContextMenu.feedId
+                    root.feedSettingsDialog.feedTitle = feedContextMenu.feedTitle
+                    root.feedSettingsDialog.open()
+                }
+            }
+        }
+        MenuItem {
             text: qsTr("Refresh")
             onTriggered: controller.refreshFeed(feedContextMenu.feedId)
         }
@@ -64,33 +75,12 @@ ListView {
         }
     }
 
-    // ── Section delegate (categories) ──────────────────────────────
+    // ── Section delegate ─────────────────────────────────────────
+    // Simple spacing between node-type groups; category-name headers
+    // would require model-level lookup in the section delegate.
     Component {
         id: sectionDelegate
-
-        ItemDelegate {
-            width: root.width
-            height: 36
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
-                spacing: 6
-
-                Label {
-                    text: section === "1" ? "" : section  // "1" = CategoryNode
-                    font.weight: Font.Bold
-                    font.pixelSize: 12
-                    color: Material.secondaryTextColor
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-
-                // Unread badge removed from section delegate
-                // (section model doesn't have unreadCount role)
-            }
-        }
+        Item { width: root.width; height: 4 }
     }
 
     // ── Footer: add feed and OPML buttons ─────────────────────────

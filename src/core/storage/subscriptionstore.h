@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QList>
 #include <QHash>
+#include <QTimer>
 #include "core/domain/Feed.h"
 #include "core/domain/Category.h"
 
@@ -17,6 +18,9 @@ public:
 
     void load();
     void save();
+
+    /// Write pending debounced changes to disk immediately.
+    void flush();
 
     // Categories
     void addCategory(const Category &cat);
@@ -43,9 +47,11 @@ signals:
 
 private:
     QString filePath() const;
+    void scheduleSave();
 
     QList<Feed> m_feeds;
     QHash<QString, Category> m_categories;
+    QTimer m_saveTimer;
 };
 
 } // namespace drift
