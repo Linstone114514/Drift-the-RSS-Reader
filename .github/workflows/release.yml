@@ -18,7 +18,12 @@ jobs:
       run:
         shell: bash
     env:
-      QT_VERSION: '6.11.1'   # keep in sync with local dev environment
+      # Qt 6.11/6.10 changed the qtsdkrepository layout again (dropped the
+      # "_64" suffix from toolchain dirs) and aqtinstall cannot parse it yet
+      # (upstream: miurahr/aqtinstall#1022). 6.10.3 is the newest version
+      # installable with stable aqt 3.3.x — verified locally end-to-end.
+      # Bump to 6.11.x (and revert arch to match) once upstream ships support.
+      QT_VERSION: '6.10.3'
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +33,7 @@ jobs:
           version: ${{ env.QT_VERSION }}
           host: 'windows'
           target: 'desktop'
-          arch: 'mingw_64'
+          arch: 'win64_mingw'   # Qt 6.8+ renamed this arch (was mingw_64)
           tools: 'tools_mingw1310'
           cache: true
         # To ship the in-app browser, also add: modules: 'qtwebview'
