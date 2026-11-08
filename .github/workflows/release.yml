@@ -40,10 +40,48 @@ jobs:
         # (and keep it installed locally so behaviour matches).
 
       - name: Locate MinGW toolchain
+        # QT_ROOT_DIR points at the Qt kit directory (.../Qt/6.10.3/mingw_64),
+        # NOT at the Qt install root: the `tools:` input of install-qt-action
+        # unpacks the compiler next to the version directory, in
+        # .../Qt/Tools/<tool>. Probe the plausible roots instead of assuming
+        # one layout, and require a gcc.exe there so a missing/partial
+        # toolchain fails here with an actionable message.
         run: |
-          MINGW_BIN="$(ls -d "$QT_ROOT_DIR/Tools/"*mingw*/bin | head -1)"
-          echo "MINGW_BIN=$MINGW_BIN" >> "$GITHUB_ENV"
-          echo "$MINGW_BIN" >> "$GITHUB_PATH"
+          set -euo pipefail
+
+          qt_roots=(
+            "${IQTA_TOOLS:-}"                    # exported by install-qt-action: <dir>/Tools
+            "${QT_ROOT_DIR:-}/../../Tools"       # <Qt>/Tools, aqt's install-tool layout
+            "${QT_ROOT_DIR:-}/../Tools"          # <Qt>/<version>/Tools
+            "${QT_ROOT_DIR:-}/Tools"             # <Qt>/Tools when QT_ROOT_DIR is <Qt>
+            "${RUNNER_WORKSPACE:-}/Qt/Tools"     # default install-qt-action dir
+          )
+
+          MINGW_BIN=""
+          for root in "${qt_roots[@]}"; do
+            [ -n "$root" ] || continue
+            for candidate in "$root"/*mingw*/bin; do
+              if [ -f "$candidate/gcc.exe" ]; then
+                MINGW_BIN="$candidate"
+                break 2
+              fi
+            done
+          done
+
+          if [ -z "$MINGW_BIN" ]; then
+            echo "::error::No MinGW bin directory with gcc.exe found - check that install-qt-action really installed 'tools_mingw1310'."
+            echo "QT_ROOT_DIR=${QT_ROOT_DIR:-<unset>}"
+            for root in "${qt_roots[@]}"; do
+              echo "--- ${root}"
+              ls -la "$root" 2>&1 || true
+            done
+            exit 1
+          fi
+
+          echo "Using MinGW: ${MINGW_BIN}"
+          "${MINGW_BIN}/gcc.exe" --version
+          echo "MINGW_BIN=${MINGW_BIN}" >> "$GITHUB_ENV"
+          echo "${MINGW_BIN}" >> "$GITHUB_PATH"
 
       - name: Install NSIS
         run: choco install nsis -y --no-progress
